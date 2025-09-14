@@ -1,6 +1,6 @@
 # scaled dot product attention
 import torch
-
+import torch.nn as nn
 inputs = torch.tensor(
     [[0.43, 0.15, 0.89],
      [0.55, 0.87, 0.66],
@@ -13,6 +13,7 @@ inputs = torch.tensor(
 x_2 = inputs[1]
 d_in = inputs.shape[1]
 d_out = 2
+attn_scores = inputs@inputs.T
 
 torch.manual_seed(123)
 W_query = torch.nn.Parameter(torch.rand(d_in, d_out), requires_grad=False)
@@ -65,3 +66,36 @@ class SelfAttention_v1(nn.Module):
     context_vec = attn_weights @ values
     return context_vec
 '''
+
+
+class SelfAttention_v2(nn.Module):
+    def __init__(self, d_in, d_out, qkv_bias=False):
+        super().__init__()
+        self.W_query = nn.Linear(d_in, d_out, bias=qkv_bias)
+        self.W_key = nn.Linear(d_in, d_out, bias=qkv_bias)
+        self.W_value = nn.Linear(d_in, d_out, bias=qkv_bias)
+
+    def forward(self, x):
+        keys = self.W_key(x)
+        values = self.W_value(x)
+        queries = self.W_query(x)
+        attn_score = queries @ keys.T
+        attn_weights = torch.softmax(attn_scores/keys.shape[-1]**0.5, dim=-1)
+        context_vec = attn_weights @ values
+        return context_vec
+
+
+torch.manual_seed(789)
+sa_v2 = SelfAttention_v2(d_in, d_out)
+print(sa_v2(inputs))
+
+# casual attention
+queries = sa_v2.W_query(inputs)
+keys = sa_v2.W_key(inputs)
+attn_scores = queries @ keys.T
+attn_weights = torch.softmax(attn_scores/keys.shape[-1]**0.5, dim=-1)
+print(attn_weights)
+
+context_length = attn_scores.shape[0]
+mask_simple = torch.tril(torch.ones(context_length, context_length))
+print(mask_simple)
