@@ -22,5 +22,5 @@ class DummyGPTModel(nn.Module):
               for _ in range(cfg["n_layers"])])
 
 
-class DummyTransformerBlock(nn.Module):
+class DummyTransformer:
     pass
