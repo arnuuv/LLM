@@ -1,3 +1,4 @@
+import tiktoken
 import torch
 import torch.nn as nn
 
@@ -156,3 +157,27 @@ class GPTModel(nn.Module):
         x = self.final_norm(x)
         logits = self.out_head(x)
         return logits
+
+
+tokenizer = tiktoken.get_encoding("gpt2")
+
+batch = []
+
+txt1 = "Every effort moves you"
+txt2 = "Every day holds a"
+
+batch.append(torch.tensor(tokenizer.encode(txt1)))
+batch.append(torch.tensor(tokenizer.encode(txt2)))
+batch = torch.stack(batch, dim=0)
+print(batch)
+
+torch.manual_seed(123)
+model = GPTModel(GPT_CONFIG_124M)
+
+out = model(batch)
+print("Input batch:\n", batch)
+print("\nOutput shape:", out.shape)
+print(out)
+
+total_params = sum(p.numel() for p in model.parameters())
+print("Total number of parameters: ", total_params)
