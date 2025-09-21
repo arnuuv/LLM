@@ -52,3 +52,26 @@ batch.append(torch.tensor(tokenizer.encode(txt1)))
 batch.append(torch.tensor(tokenizer.encode(txt2)))
 batch = torch.stack(batch, dim=0)
 print(batch)
+
+GPT_CONFIG_124M = {
+    "vocab_size": 50257,  # Vocabulary size
+    "context_length": 1024,      # Context length
+    "emb_dim": 768,
+    "n_heads": 12,
+    "n_layers": 12,
+    "drop_rate": 0.1,
+    "qkv_bias": False
+}
+torch.manual_seed(123)
+model = DummyGPTModel(cfg=GPT_CONFIG_124M)
+logits = model(batch)
+print("Output shape: ", logits.shape)
+print(logits)
+
+
+# normalization
+torch.manual_seed(123)
+batch_example = torch.randn(2, 5)
+layer = nn.Sequential(nn.Linear(5, 6), nn.ReLU())
+out = layer(batch_example)
+print(out)
