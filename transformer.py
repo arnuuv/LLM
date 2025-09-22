@@ -183,9 +183,9 @@ if __name__ == "__main__":
             probas = torch.softmax(logits, dim=-1)
             idx_next = torch.argmax(probas, dim=-1, keepdim=True)
             idx = torch.cat((idx, idx_next), dim=1)
-        return idx   # <=== fix: return, not just print
+        return idx
 
-    start_context = "Hello, I am"
+    start_context = "Hello, I am doing"
     encoded = tokenizer.encode(start_context)
     print("encoded: ", encoded)
     encoded_tensor = torch.tensor(encoded).unsqueeze(0)
@@ -199,3 +199,6 @@ if __name__ == "__main__":
     )
     print("Output: ", out)
     print("Length of the output: ", len(out[0]))
+
+    decoded_txt = tokenizer.decode(out.squeeze(0).tolist())
+    print(decoded_txt)
