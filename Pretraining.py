@@ -1,3 +1,4 @@
+from torch.utils.data import Dataset, DataLoader
 import tiktoken
 import torch
 from transformer import GPTModel
@@ -102,5 +103,90 @@ file_path = "the-verdict.txt"
 with open(file_path, "r", encoding="utf-8") as file:
     text_data = file.read()
 
-print("Characters: ", text_data)
+print("Characters: ", len(text_data))
 print("Tokens: ", len(tokenizer.encode(text_data)))
+
+
+train_ratio = 0.90
+split_idx = int(train_ratio*len(text_data))
+train_data = text_data[:split_idx]
+val_data = text_data[split_idx:]
+
+
+def create_dataloader_v1(txt, batch_size=4, max_length=256,
+                         stride=128, shuffle=True, drop_last=True,
+                         num_workers=0):
+
+    # Initialize the tokenizer
+    tokenizer = tiktoken.get_encoding("gpt2")
+
+    # Create dataset
+    dataset = GPTDatasetV1(txt, tokenizer, max_length, stride)
+
+    # Create dataloader
+    dataloader = DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        drop_last=drop_last,
+        num_workers=num_workers
+    )
+
+    return dataloader
+
+
+class GPTDatasetV1(Dataset):
+    def __init__(self, txt, tokenizer, max_length, stride):
+        self.input_ids = []
+        self.target_ids = []
+
+        # Tokenize the entire text
+        token_ids = tokenizer.encode(txt, allowed_special={"<|endoftext|>"})
+        assert len(
+            token_ids) > max_length, "Number of tokenized inputs must at least be equal to max_length+1"
+
+        # Use a sliding window to chunk the book into overlapping sequences of max_length
+        for i in range(0, len(token_ids) - max_length, stride):
+            input_chunk = token_ids[i:i + max_length]
+            target_chunk = token_ids[i + 1: i + max_length + 1]
+            self.input_ids.append(torch.tensor(input_chunk))
+            self.target_ids.append(torch.tensor(target_chunk))
+
+    def __len__(self):
+        return len(self.input_ids)
+
+    def __getitem__(self, idx):
+        return self.input_ids[idx], self.target_ids[idx]
+
+
+torch.manual_seed(123)
+train_loader = create_dataloader_v1(
+    train_data,
+    batch_size=2,
+    max_length=GPT_CONFIG_124M["context_length"],
+    stride=GPT_CONFIG_124M["context_length"],
+    drop_last=True,
+    shuffle=True,
+    num_workers=0
+)
+val_loader = create_dataloader_v1(
+    val_data,
+    batch_size=2,
+    max_length=GPT_CONFIG_124M["context_length"],
+    stride=GPT_CONFIG_124M["context_length"],
+    drop_last=False,
+    shuffle=False,
+    num_workers=0
+)
+
+print("-------------------------------")
+print("          TRAIN LOADER         ")
+print("-------------------------------")
+for x, y in train_loader:
+    print(x.shape, y.shape)
+
+print("-------------------------------")
+print("         VALIDATION LOADER     ")
+print("-------------------------------")
+for x, y in val_loader:
+    print(x.shape, y.shape)
