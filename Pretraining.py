@@ -190,3 +190,48 @@ print("         VALIDATION LOADER     ")
 print("-------------------------------")
 for x, y in val_loader:
     print(x.shape, y.shape)
+
+
+def calc_loss_batch(input_batch, target_batch, model, device):
+    input_batch = input_batch.to_device()
+    target_batch = target_batch.to_device()
+    logits = model(input_batch)
+    loss = torch.nn.functional.cross_entropy(
+        logits.flatten(0, 1), target_batch.flatten()
+    )
+    return loss
+
+
+def calc_loss_loader(data_loader, model, device, num_batches=None):
+    total_loss = 0.
+    if len(data_loader) == 0:
+        return float("nan")
+    elif num_batches is None:
+        num_batches = len(data_loader)
+    else:
+        num_batches = min(num_batches, len(data_loader))
+    for i, (input_batch, target_batch) in enumerate(data_loader):
+        if i < num_batches:
+            loss = calc_loss_batch(input_batch, target_batch, model, device)
+            total_loss += loss.item()
+        else:
+            break
+    return total_loss / num_batches
+
+
+if torch.cuda.is_available():
+    device = torch.device("cuda")
+elif torch.backends.mps.is_available():
+    device = torch.device("mps")
+else:
+    device = torch.device("cpu")
+print(f"Using {device} device.")
+model.to(device)
+torch.manual_seed(123)
+
+with torch.no_grad():
+    train_loss = calc_loss_loader(train_loader, model, device)
+    val_loss = calc_loss_loader(val_loader, model, device)
+
+print("Training loss:", train_loss)
+print("Validation loss:", val_loss)
