@@ -84,3 +84,23 @@ print(avg_log_probas)
 
 neg_avg_log_probas = avg_log_probas*-1
 print(neg_avg_log_probas)
+
+print("Logits shape: ", logits.shape)
+print("Targets shape: ", targets.shape)
+
+# Flatten tensors
+logits_flat = logits.flatten(0, 1)
+targets_flat = targets.flatten()
+print("Flattened logits: ", logits_flat.shape)
+print("Flattened targets: ", targets_flat.shape)
+
+loss = torch.nn.functional.cross_entropy(logits_flat, targets_flat)
+print(loss)
+
+
+file_path = "the-verdict.txt"
+with open(file_path, "r", encoding="utf-8") as file:
+    text_data = file.read()
+
+print("Characters: ", text_data)
+print("Tokens: ", len(tokenizer.encode(text_data)))
