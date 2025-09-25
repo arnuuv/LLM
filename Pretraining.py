@@ -1,8 +1,17 @@
-import matplotlib.pyplot as plt
-from torch.utils.data import Dataset, DataLoader
-import tiktoken
-import torch
 from transformer import GPTModel
+import torch
+import tiktoken
+from torch.utils.data import Dataset, DataLoader
+import matplotlib.pyplot as plt
+import urllib.request
+from gpt_download import download_and_load_gpt2
+url = (
+    "https://raw.githubusercontent.com/rasbt/"
+    "LLMs-from-scratch/main/ch05/"
+    "01_main-chapter-code/gpt_download.py"
+)
+filename = url.split('/')[-1]
+urllib.request.urlretrieve(url, filename)
 
 GPT_CONFIG_124M = {
     "vocab_size": 50257,   # Vocabulary size
@@ -434,3 +443,23 @@ torch.save(model.state_dict(), "model.pth")
 model = GPTModel(GPT_CONFIG_124M)
 model.load_state_dict(torch.load("model.pth", map_location=device))
 model.eval()
+optimizer = torch.optim.AdamW(
+    model.parameters(),
+    lr=0.0004, weight_decay=0.1
+)
+torch.save({
+    "model_state_dict": model.state_dict(),
+    "optimizer_state_dict": optimizer.state_dict(),
+},
+    "model_and_optimizer.pth"
+)
+
+checkpoint = torch.load("model_and_optimizer.pth")
+model = GPTModel(GPT_CONFIG_124M)
+model.load_state_dict(checkpoint["model_state_dict"])
+optimizer = torch.optim.AdamW(model.parameters(), lr=5e-4, weight_decay=0.1)
+optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+model.train()
+
+
+settings, params = download_and_load_gpt2(model_size="124M", models_dir="gpt2")
