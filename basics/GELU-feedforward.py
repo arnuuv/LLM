@@ -43,4 +43,3 @@ if __name__ == "__main__":
     print("Input shape:", x.shape)
     print("Output shape:", out.shape)
     print("Success! Shape preserved as expected.")
-
